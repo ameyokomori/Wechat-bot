@@ -28,7 +28,7 @@ import { AnimeLookupService } from './anime-lookup/anime-lookup.js';
 import { CalculatorService } from './calculator-service/calculator-service.js';
 import { HolidayService } from './holiday-service/holiday-service.js';
 import { AiPaintingService } from './ai-painting/ai-painting.js';
-import { OpenAIService } from './openai/openai-service.js';
+import { OpenAIService } from './openai/qwq-service.js';
 import { EdgeGptService } from './openai/edgegpt-service.js';
 
 const bot = WechatyBuilder.build({
@@ -109,7 +109,7 @@ async function onMessage(msg: Message) {
     }
 
     if (await msg.mentionSelf()) {
-      const room = msg.room();
+      const room = await msg.room();
       if (!room) {
         throw new Error('Should never reach here: a mention message must in a room');
       }
@@ -123,7 +123,14 @@ async function onMessage(msg: Message) {
         rainbowFart(msg, room);
       } else {
         if (!msg.self()) {
-          openaiService.getResponse(msg, botName);
+          // if (msg.text().includes('图中') || msg.text().includes('图片中') || msg.text().includes('图里') || msg.text().includes('图片里') ||
+          //   msg.text().includes('照片中') || msg.text().includes('照片里') ||
+          //   msg.text().includes('截图中') || msg.text().includes('截图里') ||
+          //   msg.text().includes('描述一下图片') || msg.text().includes('描述图片') ) {
+          //   openaiService.analysisPic(msg, botName, lastPic);
+          // } else {
+            openaiService.getResponse(msg, botName);
+          // }
         }
       }
     }
@@ -145,13 +152,13 @@ async function onMessage(msg: Message) {
     }
 
     if (msg.text() === '测试天气推送') {
-      if (msg.room()) {
+      if (await msg.room()) {
         weatherPushFunc('徐州', [msg.room()]);
       }
     }
 
     if (msg.text() === '/测试节假日') {
-      if (msg.room()) {
+      if (await msg.room()) {
         const holidayService = new HolidayService();
         try {
           const res = await holidayService.getHoliday();
@@ -164,20 +171,20 @@ async function onMessage(msg: Message) {
       }
     }
 
-    if (msg.text().startsWith('/recall')) {
-      if (toRecalledMsg) {
-        try {
-          await toRecalledMsg.recall();
-        } catch (error) {
-          console.log(error);
-          await msg.say('君子一言驷马难追');
-        }
-      }
-    }
+    // if (msg.text().startsWith('/recall')) {
+    //   if (toRecalledMsg) {
+    //     try {
+    //       await toRecalledMsg.recall();
+    //     } catch (error) {
+    //       console.log(error);
+    //       await msg.say('君子一言驷马难追');
+    //     }
+    //   }
+    // }
 
-    if (msg.text().startsWith('/ai ')) {
-      edgegptService.getPainting(msg);
-    }
+    // if (msg.text().startsWith('/ai ')) {
+    //   edgegptService.getPainting(msg);
+    // }
 
     if (msg.text().startsWith('/testnews')) {
       getNews(msg);
@@ -314,8 +321,14 @@ function checkRepeatMsg(msg: Message) {
   }
 }
 
-function saveImage(msg: Message) {
+async function saveImage(msg: Message) {
   lastPic = msg;
+  const file = await msg.toFileBox();
+  if (file) {
+    await file.toFile('lastpic.png');
+  } else {
+    throw new Error("File is null");
+  }
 }
 
 async function searchPixiv(msg: Message) {
